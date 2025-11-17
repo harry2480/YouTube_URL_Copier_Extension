@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>YouTube URL Copier - 設定</title>
+  <style>
+    body {
+      width: 400px;
+      margin: 20px;
+      font-family: Arial, sans-serif;
+    }
+    .setting-group {
+      margin-bottom: 20px;
+      padding: 15px;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+    }
+    label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: bold;
+    }
+    select, input {
+      width: 100%;
+      padding: 8px;
+      margin-bottom: 10px;
+    }
+    button {
+      background-color: #ff0000;
+      color: white;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #cc0000;
+    }
+    .status {
+      margin-top: 10px;
+      padding: 10px;
+      border-radius: 5px;
+    }
+    .success {
+      background-color: #d4edda;
+      color: #155724;
+    }
+    .error {
+      background-color: #f8d7da;
+      color: #721c24;
+    }
+  </style>
+</head>
+<body>
+  <h2>YouTube URL Copier - 設定</h2>
+
+  <div class="setting-group">
+    <label for="copy-format">デフォルトのコピー形式:</label>
+    <select id="copy-format">
+      <option value="url-only">URLのみ</option>
+      <option value="title-url">タイトルとURL</option>
+      <option value="markdown">Markdown形式</option>
+    </select>
+  </div>
+
+  <div class="setting-group">
+    <label>
+      <input type="checkbox" id="enable-notifications"> コピー成功時の通知を表示
+    </label>
+  </div>
+
+  <div class="setting-group">
+    <label for="shortcut">キーボードショートカット:</label>
+    <input type="text" id="shortcut" placeholder="例: Ctrl+Shift+Y" readonly>
+    <p>ショートカットはChromeの拡張機能設定で変更できます。</p>
+  </div>
+
+  <button id="save-btn">設定を保存</button>
+  <div id="status"></div>
+
+  <script src="options.js"></script>
+</body>
+</html>

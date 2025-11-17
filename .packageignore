@@ -1,0 +1,5 @@
+.git/
+node_modules/
+*.log
+*.zip
+# Add any additional files or folders to exclude, one per line

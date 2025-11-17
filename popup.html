@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>YouTube URL Copier</title>
+  <style>
+    body {
+      width: 300px;
+      padding: 10px;
+      font-family: Arial, sans-serif;
+    }
+    .container {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    select, button {
+      padding: 8px;
+      font-size: 14px;
+    }
+    button {
+      background-color: #ff0000;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #cc0000;
+    }
+    .status {
+      font-size: 12px;
+      color: #666;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h3>YouTube URL Copier</h3>
+    <select id="format-select">
+      <option value="url-only">URLのみ</option>
+      <option value="title-url">タイトルとURL</option>
+      <option value="markdown">Markdown形式</option>
+    </select>
+    <button id="copy-btn">コピー</button>
+    <div id="status" class="status"></div>
+    <button id="options-btn">設定</button>
+  </div>
+  <script src="popup.js"></script>
+</body>
+</html>

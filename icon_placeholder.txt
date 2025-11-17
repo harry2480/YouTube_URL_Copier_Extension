@@ -1,0 +1,19 @@
+# 拡張機能アイコン作成方法
+#
+# Chrome拡張機能を正しく動作させるには、以下のサイズのPNGアイコンファイルが必要です：
+# - icon16.png (16x16 pixels)
+# - icon48.png (48x48 pixels)
+# - icon128.png (128x128 pixels)
+#
+# 作成方法：
+# 1. オンラインアイコンジェネレーターを使用（例: favicon.io, realfavicongenerator.net）
+# 2. YouTubeロゴやリンクアイコンを検索してダウンロード
+# 3. 画像編集ソフト（ペイント、GIMP、Photoshop）でサイズ調整
+# 4. ファイルをプロジェクトフォルダに保存
+#
+# 作成したら、manifest.jsonにiconsフィールドを追加してください：
+# "icons": {
+#   "16": "icon16.png",
+#   "48": "icon48.png",
+#   "128": "icon128.png"
+# }

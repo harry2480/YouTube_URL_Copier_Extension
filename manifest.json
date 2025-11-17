@@ -1,0 +1,43 @@
+{
+  "manifest_version": 3,
+  "name": "YouTube URL Copier",
+  "version": "1.0.0",
+  "description": "Copy YouTube URLs in various formats including short URLs and Markdown links",
+  "permissions": [
+    "activeTab",
+    "scripting",
+    "notifications",
+    "contextMenus",
+    "storage",
+    "commands"
+  ],
+  "host_permissions": [
+    "*://*.youtube.com/*",
+    "*://*.youtu.be/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "*://*.youtube.com/*",
+        "*://*.youtu.be/*"
+      ],
+      "js": ["content.js"]
+    }
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Copy YouTube URL"
+  },
+  "options_page": "options.html",
+  "commands": {
+    "copy-url": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+Y"
+      },
+      "description": "Copy YouTube URL"
+    }
+  }
+}

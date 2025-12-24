@@ -21,7 +21,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   
   if (request.action === "getVideoData") {
     try {
-      const videoData = extractVideoData();
+      const videoData = extractVideoData(request.linkUrl);
       console.log('Sending video data:', videoData);
       sendResponse(videoData);
       return true; // 同期レスポンスでもtrueを返すことで安全
@@ -125,50 +125,101 @@ function copyToClipboardExecCommand(text) {
 }
 
 // YouTubeページから動画データを抽出する関数
-function extractVideoData() {
+function extractVideoData(linkUrl = null) {
   try {
-    const url = window.location.href;
+    // linkUrlが指定されている場合はそこから動画IDを抽出
+    let url = linkUrl || window.location.href;
     let videoId = null;
     let title = '';
     let currentTime = 0;
 
+    console.log('extractVideoData called with linkUrl:', linkUrl);
+    console.log('Using url:', url);
+
+    // 相対URLの場合は絶対URLに変換
+    if (linkUrl && linkUrl.startsWith('/')) {
+      url = 'https://www.youtube.com' + linkUrl;
+      console.log('Converted to absolute URL:', url);
+    }
+
     // 動画IDを抽出
-    if (url.includes('youtube.com/watch')) {
-      const urlParams = new URLSearchParams(window.location.search);
+    if (url.includes('youtube.com/watch') || url.includes('/watch?v=')) {
+      // URLからクエリパラメータを抽出
+      let queryString = '';
+      if (url.includes('?')) {
+        queryString = url.split('?')[1] || '';
+      }
+      const urlParams = new URLSearchParams(queryString);
       videoId = urlParams.get('v');
-      // 現在の再生時間を取得（オプション）
-      const player = document.querySelector('video');
-      if (player) {
-        currentTime = Math.floor(player.currentTime);
+      console.log('Extracted videoId from watch URL:', videoId);
+      
+      // 現在の再生時間を取得（オプション、現在のページからのみ）
+      if (!linkUrl) {
+        const player = document.querySelector('video');
+        if (player) {
+          currentTime = Math.floor(player.currentTime);
+        }
       }
     } else if (url.includes('youtu.be/')) {
       const match = url.match(/youtu\.be\/([a-zA-Z0-9_-]+)/);
       if (match) {
         videoId = match[1];
+        console.log('Extracted videoId from youtu.be URL:', videoId);
       }
-    } else if (url.includes('youtube.com/shorts/')) {
-      const match = url.match(/youtube\.com\/shorts\/([a-zA-Z0-9_-]+)/);
+    } else if (url.includes('youtube.com/shorts/') || url.includes('/shorts/')) {
+      const match = url.match(/\/shorts\/([a-zA-Z0-9_-]+)/);
       if (match) {
         videoId = match[1];
+        console.log('Extracted videoId from shorts URL:', videoId);
       }
     }
 
-    // 動画タイトルを取得（複数のセレクタを試す）
-    const titleSelectors = [
-      'h1.ytd-watch-metadata yt-formatted-string',
-      'h1.ytd-watch-metadata',
-      'h1.ytd-video-primary-info-renderer',
-      'yt-formatted-string.style-scope.ytd-watch-metadata',
-      '#title h1',
-      'h1.title'
-    ];
-    
-    for (const selector of titleSelectors) {
-      const titleElement = document.querySelector(selector);
-      if (titleElement && titleElement.textContent.trim()) {
-        title = titleElement.textContent.trim();
-        console.log('Title extracted using selector:', selector, 'Title:', title);
-        break;
+    console.log('Final videoId:', videoId);
+
+    // 動画タイトルを取得
+    if (linkUrl && videoId) {
+      // linkUrlが指定されている場合、そのリンクに関連する要素からタイトルを探す
+      // 動画IDを含むリンク要素を探す
+      const linkElements = document.querySelectorAll(`a[href*="${videoId}"]`);
+      for (const link of linkElements) {
+        // aria-labelからタイトルを取得
+        if (link.getAttribute('aria-label')) {
+          title = link.getAttribute('aria-label');
+          console.log('Title from aria-label:', title);
+          break;
+        }
+        // title属性からタイトルを取得
+        if (link.getAttribute('title')) {
+          title = link.getAttribute('title');
+          console.log('Title from title attribute:', title);
+          break;
+        }
+        // #video-titleを探す
+        const videoTitle = link.querySelector('#video-title, .ytd-video-renderer #video-title, yt-formatted-string#video-title');
+        if (videoTitle && videoTitle.textContent.trim()) {
+          title = videoTitle.textContent.trim();
+          console.log('Title from video-title element:', title);
+          break;
+        }
+      }
+    } else {
+      // 現在のページから動画タイトルを取得（複数のセレクタを試す）
+      const titleSelectors = [
+        'h1.ytd-watch-metadata yt-formatted-string',
+        'h1.ytd-watch-metadata',
+        'h1.ytd-video-primary-info-renderer',
+        'yt-formatted-string.style-scope.ytd-watch-metadata',
+        '#title h1',
+        'h1.title'
+      ];
+      
+      for (const selector of titleSelectors) {
+        const titleElement = document.querySelector(selector);
+        if (titleElement && titleElement.textContent.trim()) {
+          title = titleElement.textContent.trim();
+          console.log('Title extracted using selector:', selector, 'Title:', title);
+          break;
+        }
       }
     }
     

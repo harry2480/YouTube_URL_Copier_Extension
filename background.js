@@ -18,7 +18,7 @@ chrome.runtime.onInstalled.addListener(() => {
     chrome.contextMenus.create({
       id: "copy-youtube-url",
       title: "ショートURLをコピー",
-      contexts: ["page"],
+      contexts: ["page", "link", "image", "video"],
       documentUrlPatterns: ["*://*.youtube.com/*", "*://*.youtu.be/*"]
     }, () => {
       if (chrome.runtime.lastError) {
@@ -31,7 +31,7 @@ chrome.runtime.onInstalled.addListener(() => {
     chrome.contextMenus.create({
       id: "copy-youtube-url-format",
       title: "コピー形式を選択",
-      contexts: ["page"],
+      contexts: ["page", "link", "image", "video"],
       documentUrlPatterns: ["*://*.youtube.com/*", "*://*.youtu.be/*"]
     }, () => {
       if (chrome.runtime.lastError) {
@@ -46,7 +46,7 @@ chrome.runtime.onInstalled.addListener(() => {
       id: "copy-url-only",
       parentId: "copy-youtube-url-format",
       title: "URLのみ",
-      contexts: ["page"]
+      contexts: ["page", "link", "image", "video"]
     }, () => {
       if (chrome.runtime.lastError) {
         console.error('Context menu creation error:', chrome.runtime.lastError);
@@ -59,7 +59,7 @@ chrome.runtime.onInstalled.addListener(() => {
       id: "copy-title-url",
       parentId: "copy-youtube-url-format",
       title: "タイトルとURL",
-      contexts: ["page"]
+      contexts: ["page", "link", "image", "video"]
     }, () => {
       if (chrome.runtime.lastError) {
         console.error('Context menu creation error:', chrome.runtime.lastError);
@@ -72,12 +72,25 @@ chrome.runtime.onInstalled.addListener(() => {
       id: "copy-markdown",
       parentId: "copy-youtube-url-format",
       title: "Markdown形式",
-      contexts: ["page"]
+      contexts: ["page", "link", "image", "video"]
     }, () => {
       if (chrome.runtime.lastError) {
         console.error('Context menu creation error:', chrome.runtime.lastError);
       } else {
         console.log('Context menu "copy-markdown" created');
+      }
+    });
+
+    chrome.contextMenus.create({
+      id: "copy-short-url",
+      parentId: "copy-youtube-url-format",
+      title: "短縮リンク",
+      contexts: ["page", "link", "image", "video"]
+    }, () => {
+      if (chrome.runtime.lastError) {
+        console.error('Context menu creation error:', chrome.runtime.lastError);
+      } else {
+        console.log('Context menu "copy-short-url" created');
       }
     });
   } catch (error) {
@@ -93,6 +106,7 @@ chrome.contextMenus.onClicked.addListener(async (info, clickedTab) => {
       // クリックされたタブを使用（コンテキストメニューの場合は必ずclickedTabが存在する）
       const targetTab = clickedTab;
       console.log('Target tab:', targetTab);
+      console.log('Link URL:', info.linkUrl);
       
       if (!targetTab || !targetTab.id) {
         throw new Error("タブ情報が取得できませんでした");
@@ -100,7 +114,7 @@ chrome.contextMenus.onClicked.addListener(async (info, clickedTab) => {
       
       const format = getFormatFromMenuId(info.menuItemId);
       console.log('Format to copy:', format);
-      await copyYouTubeUrl(targetTab, format);
+      await copyYouTubeUrl(targetTab, format, info.linkUrl);
     }
   } catch (error) {
     console.error("コンテキストメニューエラー:", error);
@@ -160,8 +174,8 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 });
 
 // URLをコピーするメイン関数
-async function copyYouTubeUrl(sourceTab, format) {
-  console.log('copyYouTubeUrl called with:', { sourceTab, format });
+async function copyYouTubeUrl(sourceTab, format, linkUrl = null) {
+  console.log('copyYouTubeUrl called with:', { sourceTab, format, linkUrl });
   try {
     // まずタブをアクティブにする
     await chrome.tabs.update(sourceTab.id, { active: true });
@@ -195,7 +209,10 @@ async function copyYouTubeUrl(sourceTab, format) {
     let response;
     try {
       console.log('Sending message to content script...');
-      response = await chrome.tabs.sendMessage(sourceTab.id, { action: "getVideoData" });
+      response = await chrome.tabs.sendMessage(sourceTab.id, { 
+        action: "getVideoData",
+        linkUrl: linkUrl 
+      });
       
       // chrome.runtime.lastErrorをチェック
       if (chrome.runtime.lastError) {
@@ -213,7 +230,10 @@ async function copyYouTubeUrl(sourceTab, format) {
         });
         // 少し待ってから再度メッセージを送信
         await new Promise(resolve => setTimeout(resolve, 200));
-        response = await chrome.tabs.sendMessage(sourceTab.id, { action: "getVideoData" });
+        response = await chrome.tabs.sendMessage(sourceTab.id, { 
+          action: "getVideoData",
+          linkUrl: linkUrl 
+        });
         
         // chrome.runtime.lastErrorをチェック
         if (chrome.runtime.lastError) {
@@ -228,7 +248,7 @@ async function copyYouTubeUrl(sourceTab, format) {
     }
 
     if (!response || !response.videoId) {
-      throw new Error("YouTubeの動画ページではありません");
+      throw new Error("YouTube動画ページで使用してください。ホームページやチャンネルページでは動作しません。");
     }
 
     // デバッグ情報をログ出力
@@ -252,6 +272,9 @@ async function copyYouTubeUrl(sourceTab, format) {
         break;
       case 'markdown':
         textToCopy = `[${title}](${shortUrl})`;
+        break;
+      case 'short-url':
+        textToCopy = shortUrl;
         break;
       default:
         textToCopy = shortUrl;
@@ -314,6 +337,8 @@ function getFormatFromMenuId(menuId) {
       return 'title-url';
     case 'copy-markdown':
       return 'markdown';
+    case 'copy-short-url':
+      return 'short-url';
     default:
       return 'url-only';
   }
